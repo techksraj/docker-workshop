@@ -49,5 +49,13 @@
 
 10) pip3 install uv -> to install uv package inside the container. uv is used for creating virtual environments.
 
+11) uv init --python 3.13 -> to create a virtual environment with python version 3.13
+
+12) uv add pandas pyarrow -> to add pandas and pyarrow packages to the virtual environment
+
+13) docker build -t test:pandas . -> to build a docker image with name test and tag pandas. The dot at the end specifies that the Dockerfile is in the current directory.
+
+14) docker run -it --entrypoint=bash --rm test:pandas -> to run the docker image test with tag pandas. --rm flag is used to remove the container once it stops.
+
 
 
