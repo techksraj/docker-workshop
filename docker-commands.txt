@@ -57,5 +57,41 @@
 
 14) docker run -it --entrypoint=bash --rm test:pandas -> to run the docker image test with tag pandas. --rm flag is used to remove the container once it stops.
 
+15) docker build -t test:pandas . -> after making changes to the Dockerfile, to rebuild the image with the same name and tag.
 
+16) docker run -it --rm \
+  -e POSTGRES_USER="root" \
+  -e POSTGRES_PASSWORD="root" \
+  -e POSTGRES_DB="ny_taxi" \
+  -v ny_taxi_postgres_data:/var/lib/postgresql \
+  -p 5432:5432 \
+  postgres:18   -> to run a Postgres database in a docker container with environment variables for user, password and database name. Also mapping the volume ny_taxi_postgres_data to /var/lib/postgresql in the container and exposing port 5432.
 
+17) uv run --active pgcli -h localhost -p 5432 -u root -d ny_taxi -> to connect to the Postgres database running in the docker container using pgcli.
+
+18) uv add --dev jupyter -> to add jupyter as a dev dependency in the virtual environment.
+
+19) uv run jupyter notebook -> to run jupyter notebook inside the docker container.
+
+20) http://localhost:8888/tree -> to access jupyter notebook in the browser.
+
+21) URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1032)> -> this error occurs when there is an SSL certificate verification issue. To fix this, run the following commands in the terminal:
+
+    /Applications/Python\ 3.13/Install\ Certificates.command
+
+    and then restart the jupyter notebook server.
+
+    add the below code for it to work:
+        import pandas as pd
+        import certifi
+        import ssl
+        import urllib.request
+
+        # Create SSL context with certifi certificates
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+        prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/'
+        url = f'{prefix}yellow_tripdata_2021-01.csv.gz'
+
+        df = pd.read_csv(url)
+        print(df.head())
