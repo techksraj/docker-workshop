@@ -68,6 +68,20 @@
   postgres:18   -> to run a Postgres database in a docker container with environment variables for user, password and database name. Also mapping the volume ny_taxi_postgres_data to /var/lib/postgresql in the container and exposing port 5432.
 
 17) uv run --active pgcli -h localhost -p 5432 -u root -d ny_taxi -> to connect to the Postgres database running in the docker container using pgcli.
+        If the above steps results in below error:
+            n import_from_libpq
+            raise ImportError(
+            ...<4 lines>...
+                    )
+        ImportError: no pq wrapper available.
+        Attempts made:
+        - couldn't import psycopg 'c' implementation: No module named 'psycopg_c'
+        - couldn't import psycopg 'binary' implementation: No module named 'psycopg_binary'
+        - couldn't import psycopg 'python' implementation: libpq library not found
+        
+        Then install psycopg with the below command and re-run the above uv run command:
+            uv pip install --upgrade psycopg
+            export PATH="$(brew --prefix libpq)/bin:$PATH"
 
 18) uv add --dev jupyter -> to add jupyter as a dev dependency in the virtual environment.
 
@@ -95,3 +109,95 @@
 
         df = pd.read_csv(url)
         print(df.head())
+
+22) uv run jupyter nbconvert --to script notebook.ipynb -> to convert jupyter notebook notebook.ipynb to a python script notebook.py
+
+23) uv run python ingest_data.py -> to run the ingest_data.py script inside the docker container.
+
+24) docker build -t taxi_ingest:v001 . -> to build a docker image with name taxi_ingest and tag v001.
+
+25) uv run python ingest_data.py --pg-user=root --pg-password=root --pg-host=localhost --pg-port=5432 --pg-db=ny_taxi --target-table=yellow_taxi_trips_2021_1 --year=2021 --month=1 -> to run the ingest_data.py script with command line arguments for Postgres connection and target table name.
+
+26) docker run -it --rm \
+  --network=pg-network \
+  taxi_ingest:v001 \
+  --pg-user="root" \
+  --pg-password="root" \
+  --pg-host="host.docker.internal" \
+  --pg-port="5432" \
+  --pg-db="ny_taxi" \
+  --target-table="yellow_taxi_trips_2021_1"  
+  -> to run the taxi_ingest docker image with environment variables for Postgres connection and command line arguments for target table name, year and month. Note that PGHOST is set to host.docker.internal to connect to the Postgres database running on the host machine.
+
+27) Run it with network:
+        docker run -it --rm \
+        -e POSTGRES_USER="root" \
+        -e POSTGRES_PASSWORD="root" \
+        -e POSTGRES_DB="ny_taxi" \
+        -v ny_taxi_postgres_data:/var/lib/postgresql \
+        -p 5432:5432 \
+        --network=pg-network \
+        --name pgdatabase
+        postgres:18
+
+28) docker run -it --rm \
+  --network=pg-network \
+  taxi_ingest:v001 \
+  --pg-user="root" \
+  --pg-password="root" \
+  --pg-host="pgdatabase" \
+  --pg-port="5432" \
+  --pg-db="ny_taxi" \
+  --target-table="yellow_taxi_trips_2021_1" -> to run the taxi_ingest docker image with environment variables for Postgres connection and command line arguments for target table name, year and month. Note that PGHOST is set to pgdatabase which is the name of the Postgres container in the same network.
+
+29) docker run -it \
+  -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+  -e PGADMIN_DEFAULT_PASSWORD="root" \
+  -v pgadmin_data:/var/lib/pgadmin \
+  -p 8085:80 \
+  --network=pg-network \
+  --name pgadmin \
+  dpage/pgadmin4 -> to run pgadmin in a docker container with environment variables for default email and password. Also mapping the volume pgadmin_data to /var/lib/pgadmin in the container and exposing port 8085. The container is connected to the same network as the Postgres container.
+
+30) Create docker compose file from the below 2 commands:
+
+        docker run -it --rm \
+        -e POSTGRES_USER="root" \
+        -e POSTGRES_PASSWORD="root" \
+        -e POSTGRES_DB="ny_taxi" \
+        -v ny_taxi_postgres_data:/var/lib/postgresql \
+        -p 5432:5432 \
+        --network=pg-network \
+        --name pgdatabase
+        postgres:18
+
+
+        docker run -it \
+        -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+        -e PGADMIN_DEFAULT_PASSWORD="root" \
+        -v pgadmin_data:/var/lib/pgadmin \
+        -p 8085:80 \
+        --network=pg-network \
+        --name pgadmin \
+        dpage/pgadmin4 
+
+31) docker compose up -> to run the services defined in the docker-compose.yml file.
+
+32) docker network ls -> to list all the docker networks.
+
+33) docker run -it --rm \
+  --network=pipeline_default \
+  taxi_ingest:v001 \
+  --pg-user="root" \
+  --pg-password="root" \
+  --pg-host="pgdatabase" \
+  --pg-port="5432" \
+  --pg-db="ny_taxi" \
+  --target-table="yellow_taxi_trips_2021_1" -> to run the taxi_ingest docker image with environment variables for Postgres connection and command line arguments for target table name, year and month. Note that PGHOST is set to pgdatabase which is the name of the Postgres container in the same network pipeline_default created by docker compose.
+
+
+
+
+
+
+
